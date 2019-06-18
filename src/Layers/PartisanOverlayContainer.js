@@ -4,6 +4,9 @@ import select from "../components/select";
 import { toggle } from "../components/Toggle";
 import PartisanOverlay from "./PartisanOverlay";
 import { getLayerDescription } from "./OverlayContainer";
+import { getPartyRGBColors } from "./color-rules";
+import { actions } from "../reducers/elections";
+import { bindAll } from "../utils";
 
 export default class PartisanOverlayContainer {
     constructor(layers, elections) {
@@ -14,9 +17,10 @@ export default class PartisanOverlayContainer {
         );
         this._currentElectionIndex = 0;
 
-        this.setElection = this.setElection.bind(this);
-        this.render = this.render.bind(this);
-        this.toggleVisibility = this.toggleVisibility.bind(this);
+        bindAll(
+            ["setElection", "render", "toggleVisibility", "updateElection"],
+            this
+        );
     }
     get currentElectionOverlay() {
         return this.electionOverlays[this._currentElectionIndex];
@@ -29,17 +33,23 @@ export default class PartisanOverlayContainer {
             this.currentElectionOverlay.hide();
         }
     }
-    setElection(i) {
+    updateElection(i) {
         this._currentElectionIndex = i;
         this.electionOverlays.forEach(overlay => overlay.hide());
         if (this.isVisible) {
-            this.currentElectionOverlay.show();
-        } else {
-            this.currentElectionOverlay.repaint();
+            this.electionOverlays[this._currentElectionIndex].show();
         }
     }
-    render() {
-        const overlay = this.currentElectionOverlay;
+    setElection(i, dispatch) {
+        this.updateElection(i);
+        dispatch(actions.changeElection({ index: i }));
+    }
+    render(uiState, dispatch) {
+        const currentIndex = uiState.elections.activeElectionIndex;
+        if (currentIndex !== this._currentElectionIndex) {
+            this.updateElection(currentIndex);
+        }
+        const overlay = this.electionOverlays[currentIndex];
         return html`
             <h4>Partisanship</h4>
             <div class="ui-option ui-option--slim">
@@ -50,8 +60,11 @@ export default class PartisanOverlayContainer {
             ${[
                 {
                     label: "Election:",
-                    element: select("election-overlay", this.elections, i =>
-                        this.setElection(i)
+                    element: select(
+                        "election-overlay",
+                        this.elections,
+                        i => this.setElection(i, dispatch),
+                        currentIndex
                     )
                 },
                 {
@@ -66,6 +79,32 @@ export default class PartisanOverlayContainer {
                     )
                 }
             ].map(Parameter)}
+            ${CategoricalLegend(overlay.election)}
         `;
     }
+}
+
+function cssRGB(rgb) {
+    return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
+function CategoricalLegend(election) {
+    return html`
+        <details>
+            <summary>Legend</summary>
+            ${election.parties.map(party =>
+                Parameter({
+                    label: html`
+                        <span
+                            class="part-number"
+                            style="background: ${cssRGB(
+                                getPartyRGBColors(party.name)
+                            )}"
+                        ></span>
+                    `,
+                    element: party.name
+                })
+            )}
+        </details>
+    `;
 }
