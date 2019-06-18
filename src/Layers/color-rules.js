@@ -20,7 +20,7 @@ let vizColors = [
 
 let cachedColors = {};
 
-function getPartyRGBColors(name) {
+export function getPartyRGBColors(name) {
     if (partyRGBColors.hasOwnProperty(name)) {
         return partyRGBColors[name];
     }

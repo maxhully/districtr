@@ -87,13 +87,7 @@ export default function DataLayersPlugin(editor) {
             state.layers,
             state.elections
         );
-        tab.addSection(
-            () => html`
-                <div class="option-list__item">
-                    ${partisanOverlays.render()}
-                </div>
-            `
-        );
+        tab.addSection(partisanOverlays.render);
     }
 
     toolbar.addTab(tab);

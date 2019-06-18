@@ -11,8 +11,11 @@ export default function ElectionResultsSection(
 ) {
     return html`
         <section class="toolbar-section">
-            ${select("elections", elections, index =>
-                dispatch(actions.changeElection({ index }))
+            ${select(
+                "elections",
+                elections,
+                index => dispatch(actions.changeElection({ index })),
+                uiState.elections.activeElectionIndex
             )}
             ${ElectionResults(
                 elections[uiState.elections.activeElectionIndex],
